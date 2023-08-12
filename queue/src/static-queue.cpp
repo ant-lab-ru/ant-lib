@@ -7,6 +7,7 @@ class StaticQueue
     private:
         uint32_t first_num_elem_queue;
         uint32_t last_num_elem_queue;
+        uint32_t current_number_of_elem_queue;
 
         uint32_t element_size_queue;
         uint32_t capacity_queue;
@@ -29,7 +30,7 @@ class StaticQueue
         void* remove_blocking();
 };
 /**
- * @brief Construct a new Static Queue:: Static Queue object
+ * @brief Инициализация новой Static Queue:: Static Queue object
  * Инициализация очереди размером element_count,
  * каждый из которым размером element_size.
  * Для хранения выделен buffer.
@@ -42,8 +43,8 @@ void StaticQueue::init(uint32_t element_size, uint32_t element_count, void* buff
     element_size_queue = element_size;
     capacity_queue = element_count;
 
-    first_num_elem_queue = 1;
-    last_num_elem_queue = 1;
+    first_num_elem_queue = 0;
+    last_num_elem_queue = 0;
 
     buffer_queue = (uint32_t*)buffer;
     return ;
@@ -58,9 +59,17 @@ void StaticQueue::deinit() {
 }
 
 bool StaticQueue::empty() {
-    if (last_num_elem_queue < first_num_elem_queue) {
+    if (last_num_elem_queue == 0) {
         std::cout << "Queue is empty" << std::endl;
-        return -1;
+        return true;
     }
-    
+    return false;
+}
+
+bool StaticQueue::full() {
+    if ((first_num_elem_queue = 0) && (last_num_elem_queue == capacity_queue - 1)) {
+        std::cout << "Queue is empty" << std::endl;
+        return true;
+    }
+    return false;
 }
