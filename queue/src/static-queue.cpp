@@ -4,7 +4,7 @@
 
 class StaticQueue
 {
-    public:
+    private:
         uint32_t first_num_elem_queue;
         uint32_t last_num_elem_queue;
 
@@ -12,9 +12,9 @@ class StaticQueue
         uint32_t capacity_queue;
 
         uint32_t* buffer_queue;
-
-        StaticQueue(uint32_t element_size, uint32_t element_count, void* buffer);
-        ~StaticQueue();
+    public:
+        void init(uint32_t element_size, uint32_t element_count, void* buffer);
+        void deinit();
 
         bool empty();
         bool full();
@@ -37,8 +37,7 @@ class StaticQueue
  * @param element_count 
  * @param buffer 
  */
-
-StaticQueue::StaticQueue(uint32_t element_size, uint32_t element_count, void* buffer)
+void StaticQueue::init(uint32_t element_size, uint32_t element_count, void* buffer)
 {
     element_size_queue = element_size;
     capacity_queue = element_count;
@@ -54,7 +53,7 @@ StaticQueue::StaticQueue(uint32_t element_size, uint32_t element_count, void* bu
  * @brief Destroy the Static Queue:: Static Queue object
  * Очищение памяти занятой элементом класса статической очереди
  */
-StaticQueue::~StaticQueue() {
+void StaticQueue::deinit() {
     delete[] buffer_queue;
 }
 
