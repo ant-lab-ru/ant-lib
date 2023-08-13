@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(queue)
 add_subdirectory(can-adapter)
+add_subdirectory(can-frag)
 
 enable_testing()
 include(GoogleTest)
