@@ -183,6 +183,10 @@ int CanAdapter::socketRead(int socketId, uint8_t* buffer, uint32_t lenght)
     }
     else
     {
+        if (!socket->packet->isPacketReady()) {
+            return 0;
+        }
+
         int rc = socket->packet->readPacket(buffer, lenght);
         if (rc < 0) {
             return -1;
