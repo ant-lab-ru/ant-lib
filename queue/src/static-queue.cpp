@@ -73,10 +73,7 @@ bool StaticQueue::add(const void* element) {
         return false;//STATIC_QUEUE_IS_FULL;
     }
 
-    if (sizeof(element) != element_size_queue) {
-        return false;//STATIC_QUEUE_SIZE_ELEM;
-    }
-
+ 
     memcpy((uint32_t*)buffer_queue + (last_num_elem_queue * element_size_queue), element, element_size_queue);
 
     last_num_elem_queue += 1;
