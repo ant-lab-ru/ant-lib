@@ -5,6 +5,8 @@ project(can-adapter)
 target_sources(${PROJECT_NAME} PUBLIC
 "${PROJECT_SOURCE_DIR}/include/libs/can-adapter.h"
 "${PROJECT_SOURCE_DIR}/src/can-adapter.cpp"
+
+"${PROJECT_SOURCE_DIR}/../queue/include/libs/static-queue.h"
 )
 
 add_library(${PROJECT_NAME} STATIC)

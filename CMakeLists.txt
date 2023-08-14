@@ -12,7 +12,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(queue)
-add_subdirectory(can-adapter)
+add_subdirectory(tests/queue)
 
 enable_testing()
 include(GoogleTest)

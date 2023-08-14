@@ -1,7 +1,7 @@
 #pragma once
 
 #include "can-interface.h"
-#include "libs/static-queue.h"
+#include "include/libs/static-queue.h"
 
 class CanSocket
 {
