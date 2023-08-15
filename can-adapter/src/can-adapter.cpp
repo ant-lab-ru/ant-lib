@@ -1,12 +1,16 @@
-#include "libs/can-adapter.h"
+#include "ant-lib/can-adapter.h"
 
 typedef struct {
-    uint32_t packet_size;
-    uint8_t packet_data[];
+    uint16_t packetSize;
+    uint8_t  packetData[];
 } CanAdapterPacket;
 
 int CanAdapter::init(ICan* iCan)
 {
+    if (!iCan) {
+        return -1;
+    }
+
     this->can = iCan;
     this->initialized = true;
 
@@ -20,29 +24,46 @@ int CanAdapter::deinit()
 
 int CanAdapter::socketOpen(SocketOpenInitStruct* initStruct)
 {
-    int newId = this->findFreeSocket(initStruct->myCanId);
+    if (!initStruct) {
+        return -1;
+    }
+    if (!initStruct->iCanPacket) {
+        return -1;
+    }
 
+    int newId = this->findFreeSocket(initStruct->myCanId);
     if (newId < 0) {
         return -1;
     }
 
     CanSocket* socket = &this->socket[newId];
 
+    // Init main fields
+    socket->queueEnable = false;
     socket->myCanId = initStruct->myCanId;
     socket->dstCanId = initStruct->dstCanId;
     socket->packet = initStruct->iCanPacket;
-    socket->queueEnable = false;
-
-    socket->packet->init(initStruct->packetBuffer, initStruct->packetBufferLenght);
-    socket->socketOpen = true;
     socket->packetDataMaxSize = initStruct->packetBufferLenght;
 
-    if (!initStruct->queueBuffer && initStruct->queueBufferLenght >= initStruct->packetBufferLenght) {
-        socket->queueEnable = true;
+    int rc = socket->packet->init(CAN_FRAME_MAX_DATA_LEN, initStruct->packetBuffer, initStruct->packetBufferLenght);
+    if (rc < 0) {
+        return -1;
+    }
+
+    // If iCanPacket init ok -> socket open
+    socket->socketOpen = true;
+
+    // If queue is used
+    if (!initStruct->queueBuffer)
+    {
+        if (initStruct->queueBufferLenght < (initStruct->packetBufferLenght + sizeof(uint16_t))) {
+            return -1;
+        }
 
         uint32_t element_size = initStruct->queueBufferLenght / initStruct->packetBufferLenght;
-
         socket->queue.init(initStruct->packetBufferLenght, element_size, initStruct->queueBuffer);
+
+        socket->queueEnable = true;
     }
 
     return 0;
@@ -58,11 +79,12 @@ int CanAdapter::socketWrite(int socketId, const uint8_t* data, uint32_t size)
     socket->packet->writePacket(data, size);
 
     can_frame_t frame = {0};
+    uint32_t bytes_moved = 0;
 
     while(1)
     {
         int rc = socket->packet->popFrame(frame.frame_data, CAN_FRAME_MAX_DATA_LEN);
-        if (rc < 0) {
+        if (rc < 0 || rc > CAN_FRAME_MAX_DATA_LEN) {
             return -1;
         }
         if (rc == 0) {
@@ -71,8 +93,16 @@ int CanAdapter::socketWrite(int socketId, const uint8_t* data, uint32_t size)
 
         frame.frame_size = rc;
         frame.can_id = socket->dstCanId;
-        this->can->write(&frame);
+
+        rc = this->can->write(&frame);
+        if (rc != frame.frame_size) {
+            return -1;
+        }
+
+        bytes_moved += frame.frame_size;
     }
+
+    return bytes_moved;
 }
 
 int CanAdapter::handle()
@@ -84,7 +114,6 @@ int CanAdapter::handle()
     {
         // Reading low-level CAN
         int rc = this->can->read(&frame);
-        // If error
         if (rc < 0) {
             return -1;
         }
@@ -105,6 +134,7 @@ int CanAdapter::handle()
             break;
         }
 
+        // If queue enabled then put packet in it
         if (socket->queueEnable && socket->packet->isPacketReady())
         {
             CanAdapterPacket* entry = (CanAdapterPacket*)socket->queue.reserve();
@@ -112,7 +142,12 @@ int CanAdapter::handle()
                 break;
             }
 
-            socket->packet->readPacket(entry->packet_data);
+            rc = socket->packet->readPacket(entry->packetData, socket->packetDataMaxSize);
+            if (rc < 0) {
+                return -1;
+            }
+
+            entry->packetSize = rc;
         }
     }
 
@@ -130,17 +165,32 @@ int CanAdapter::socketRead(int socketId, uint8_t* buffer, uint32_t lenght)
         if (socket->queue.empty()) {
             return 0;
         }
-        void* entry = socket->queue.remove();
+
+        CanAdapterPacket* entry = (CanAdapterPacket*)socket->queue.remove();
         if (!entry) {
             return -1;
         }
+
+        if (entry->packetSize > socket->packetDataMaxSize) {
+            return -1;
+        }
+        if (lenght < entry->packetSize){
+            return -3;
+        }
+
+        memcpy(buffer, entry->packetData, entry->packetSize);
+        return entry->packetSize;
     }
-    int rc = socket->packet->readPacket(buffer, lenght);
-    if (rc < 0) {
-        return -1;
+    else
+    {
+        int rc = socket->packet->readPacket(buffer, lenght);
+        if (rc < 0) {
+            return -1;
+        }
+        return rc;
     }
 
-    return 0;
+    return -1;
 }
 
 int CanAdapter::findFreeSocket(uint32_t myId)

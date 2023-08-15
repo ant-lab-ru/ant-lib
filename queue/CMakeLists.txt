@@ -5,7 +5,7 @@ project(static-queue)
 add_library(${PROJECT_NAME} STATIC)
 
 target_sources(${PROJECT_NAME} PUBLIC
-    "${PROJECT_SOURCE_DIR}/include/libs/static-queue.h"
+    "${PROJECT_SOURCE_DIR}/include/ant-lib/static-queue.h"
     "${PROJECT_SOURCE_DIR}/src/static-queue.cpp"
 )
 

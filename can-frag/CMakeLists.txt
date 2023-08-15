@@ -5,7 +5,7 @@ project(can-frag)
 add_library(${PROJECT_NAME} STATIC)
 
 target_sources(${PROJECT_NAME} PUBLIC
-"${PROJECT_SOURCE_DIR}/include/libs/can-frag.h"
+"${PROJECT_SOURCE_DIR}/include/ant-lib/can-frag.h"
 "${PROJECT_SOURCE_DIR}/src/can-frag.cpp"
 )
 

@@ -4,7 +4,7 @@
 class ICanPacket
 {
     public:
-        virtual int init(uint8_t* readBuffer, uint32_t readBufferLenght) = 0;
+        virtual int init(uint32_t frameSize, uint8_t* readBuffer, uint32_t readBufferLenght) = 0;
         virtual int deinit() = 0;
 
         virtual int pushFrame(const uint8_t* data, uint32_t size) = 0;
