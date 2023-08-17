@@ -22,6 +22,9 @@ void StaticQueue::init(uint32_t element_size, uint32_t element_count, void* buff
     first_num_elem_queue = 0;
     last_num_elem_queue = 0;
 
+    reserved_element = {};
+    is_reserved_space_in_queue =  0;
+
     if (buffer == NULL) {
         buffer_queue = (uint32_t*) malloc(sizeof(element_size_queue) *  element_count);
     }
@@ -136,21 +139,42 @@ void* StaticQueue::remove_blocking() {
     return kill_item;
 }
 
+
+// Возможность резервирования одного места
 void* StaticQueue::reserve()
 {
     int rc = StaticQueue::full();
-	if (rc)
+	if (rc) {
 		return NULL;
+    }
 
+    is_reserved_space_in_queue = true;
 
 	last_num_elem_queue += 1;
     current_numbers_of_elem_queue += 1;
 
+    reserved_element.reserved_number = last_num_elem_queue;
 	return (uint32_t*)buffer_queue + (last_num_elem_queue  * element_size_queue);
 }
 
 
-bool unreserve();
+bool StaticQueue::unreserve()
+{
+    if (!is_reserved_space_in_queue) {
+        cout << "THERE IS NO RESERVED SPACE";
+        return false;
+    }
+
+    is_reserved_space_in_queue = false;
+
+	last_num_elem_queue -= 1;
+    current_numbers_of_elem_queue -= 1;
+
+    reserved_element.reserved_number = 0;
+	return true;
+
+}
+
 //==================================================================================
 //                  Функции геттеры
 //==================================================================================
@@ -206,4 +230,32 @@ void*  StaticQueue::get_elem_by_number(uint32_t number_of_queue_elem){
     void* value_of_elem_by_number = (uint32_t*)buffer_queue + (number_of_queue_elem  * element_size_queue);
 	
 	return value_of_elem_by_number;
+}
+
+bool StaticQueue::add_reserve_element(const void* element){
+    if (!is_reserved_space_in_queue) {
+        cout << "THERE IS NO RESERVED SPACE FOR ELEMENT";
+        return false;
+    }
+    
+    memcpy((uint32_t*)reserved_element.element, element, element_size_queue);
+    return true;
+}
+
+void* StaticQueue::get_reserve_element() {
+    if (!is_reserved_space_in_queue) {
+        cout << "THERE IS NO RESERVED ELEMENT";
+        return ;
+    }
+
+    reserved_element_t* tmp;
+    tmp->reserved_number = reserved_element.reserved_number;
+    tmp->element = reserved_element.element;
+	
+	return tmp;
+}
+
+void StaticQueue::get_queue_info(){
+    cout << "===== QUEUE =====" << endl;
+    cout << "Number of elements: " << << endl;
 }

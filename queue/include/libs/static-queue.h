@@ -5,6 +5,12 @@
 #include <stdlib.h>
 #include <iostream>
 
+typedef struct {
+    uint32_t reserved_number;
+    uint32_t* element;
+} reserved_element_t;
+
+
 class StaticQueue
 {
     private:
@@ -14,8 +20,10 @@ class StaticQueue
 
         uint32_t element_size_queue;
         uint32_t capacity_queue;
-
+        reserved_element_t reserved_element;
+        bool is_reserved_space_in_queue;
         uint32_t* buffer_queue;
+        
     public:
         void init(uint32_t element_size, uint32_t element_count, void* buffer);
         void deinit();
@@ -39,5 +47,8 @@ class StaticQueue
         void* get_value_first_elem();
         void* get_value_last_elem() ;
         void* get_elem_by_number(uint32_t number_of_queue_elem);
-        
+        bool get_is_reserved_space_in_queue();
+        void get_queue_info();
+        bool add_reserve_element(const void* element);
+        void* get_reserve_element();
 };
