@@ -59,7 +59,7 @@ bool StaticQueue::empty() {
 
 bool StaticQueue::full() {
     if ((first_num_elem_queue = 0) && (last_num_elem_queue == capacity_queue - 1) && current_numbers_of_elem_queue == capacity_queue) {
-        cout << "Queue is empty" << endl;
+        cout << "Queue is full" << endl;
         return true;
     }
     return false;
@@ -84,10 +84,11 @@ bool StaticQueue::add(const void* element) {
 
 void StaticQueue::add_blocking(const void* element) {
     int rc = StaticQueue::full();
-
     if (rc) {
-        cout << "STATIC_QUEUE_IS_FULL";
-        // что-то делает
+         cout << "STATIC_QUEUE_IS_FULL - NEED TO FREE SPACE FOR NEW ELEM";
+    }
+    while(rc){
+        rc = StaticQueue::full();
     }
 
     if (sizeof(element) != element_size_queue) {
@@ -118,13 +119,49 @@ void* StaticQueue::remove() {
 }
 
 
-uint32_t StaticQueue::get_first_elem() {
+void* StaticQueue::remove_blocking() {
+    int rc = StaticQueue::empty();
+    if (rc) {
+        cout << "STATIC_QUEUE_IS_EMPTY - NEED TO ADD NEW ELEM";
+    }
+    while(rc){
+        rc = StaticQueue::empty();
+    }
+
+	void* kill_item = (uint32_t*)buffer_queue + (first_num_elem_queue  * element_size_queue);
+
+    first_num_elem_queue += 1;
+    current_numbers_of_elem_queue -= 1;
+
+    return kill_item;
+}
+
+void* StaticQueue::reserve()
+{
+    int rc = StaticQueue::full();
+	if (rc)
+		return NULL;
+
+
+	last_num_elem_queue += 1;
+    current_numbers_of_elem_queue += 1;
+
+	return (uint32_t*)buffer_queue + (last_num_elem_queue  * element_size_queue);
+}
+
+
+bool unreserve();
+//==================================================================================
+//                  Функции геттеры
+//==================================================================================
+
+uint32_t StaticQueue::get_num_first_elem() {
     uint32_t tmp = first_num_elem_queue;
 		
 	return tmp;
 
 }
-uint32_t StaticQueue::get_last_elem(){
+uint32_t StaticQueue::get_num_last_elem(){
     uint32_t tmp = last_num_elem_queue;
 		
 	return tmp;
@@ -141,4 +178,32 @@ uint32_t StaticQueue::get_capacity(){
 		
 	return tmp;
 
+}
+void*  StaticQueue::get_value_first_elem() {
+    void* value_first_elem = (uint32_t*)buffer_queue + (first_num_elem_queue  * element_size_queue);
+	
+	return value_first_elem;
+
+}
+void*  StaticQueue::get_value_last_elem(){  
+    void* value_last_elem = (uint32_t*)buffer_queue + (last_num_elem_queue  * element_size_queue);
+	
+	return value_last_elem;
+}
+
+void*  StaticQueue::get_elem_by_number(uint32_t number_of_queue_elem){  
+     if (number_of_queue_elem < first_num_elem_queue) {
+        cout << "NUMBER_IS_OUT_CURRENT_QUEUE - NEED TO BE MORE";
+        return StaticQueue::get_value_first_elem();
+    }
+
+    if (number_of_queue_elem > last_num_elem_queue) {
+        cout << "NUMBER_IS_OUT_CURRENT_QUEUE - NEED TO BE LESS";
+        return StaticQueue::get_value_last_elem();
+    }
+
+
+    void* value_of_elem_by_number = (uint32_t*)buffer_queue + (number_of_queue_elem  * element_size_queue);
+	
+	return value_of_elem_by_number;
 }

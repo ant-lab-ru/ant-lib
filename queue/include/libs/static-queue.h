@@ -29,11 +29,15 @@ class StaticQueue
         void* reserve();
         bool unreserve();
 
-        uint32_t get_first_elem();
-        uint32_t get_last_elem();
-        uint32_t get_number_of_elem();
-        uint32_t get_capacity();
-
         void* remove();
         void* remove_blocking();
+
+        uint32_t get_num_first_elem();
+        uint32_t get_num_last_elem();
+        uint32_t get_number_of_elem();
+        uint32_t get_capacity();
+        void* get_value_first_elem();
+        void* get_value_last_elem() ;
+        void* get_elem_by_number(uint32_t number_of_queue_elem);
+        
 };
