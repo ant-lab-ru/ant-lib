@@ -22,7 +22,7 @@ void StaticQueue::init(uint32_t element_size, uint32_t element_count, void* buff
     first_num_elem_queue = 0;
     last_num_elem_queue = 0;
 
-    reserved_element = {};
+    reserved_element = {0};
     is_reserved_space_in_queue =  0;
 
     if (buffer == NULL) {
@@ -203,6 +203,13 @@ uint32_t StaticQueue::get_capacity(){
 	return tmp;
 
 }
+
+bool StaticQueue::get_is_reserved_space_in_queue(){
+    bool tmp = is_reserved_space_in_queue;
+		
+	return tmp;
+
+}
 void*  StaticQueue::get_value_first_elem() {
     void* value_first_elem = (uint32_t*)buffer_queue + (first_num_elem_queue  * element_size_queue);
 	
@@ -257,5 +264,10 @@ void* StaticQueue::get_reserve_element() {
 
 void StaticQueue::get_queue_info(){
     cout << "===== QUEUE =====" << endl;
-    cout << "Number of elements: " << << endl;
+    cout << "Is queue full: " << StaticQueue::full()<< endl;
+    cout << "Is queue empty: " << StaticQueue::empty()<< endl;
+    cout << "Number of elements: " << StaticQueue::get_number_of_elem()<< endl;
+    cout << "First element number: " << StaticQueue::get_num_first_elem()<< endl;
+    cout << "Last element number: " << StaticQueue::get_num_last_elem()<< endl;
+    cout << "Is reserved space in queue: " << StaticQueue::get_is_reserved_space_in_queue()<< endl;
 }
