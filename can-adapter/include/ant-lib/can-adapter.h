@@ -1,7 +1,7 @@
 #pragma once
 
-#include "if-can.h"
-#include "if-canpacket.h"
+#include "interfaces/can-if.h"
+#include "interfaces/can-packet-if.h"
 #include "ant-lib/static-queue.h"
 
 #ifndef CAN_ADAPTER_SOCKETS_MAX

@@ -15,6 +15,8 @@ add_subdirectory(queue)
 add_subdirectory(can-adapter)
 add_subdirectory(can-frag)
 
+target_include_directories(libs-tests "${PROJECT_SOURCE_DIR}/interfaces/include")
+
 enable_testing()
 include(GoogleTest)
 
