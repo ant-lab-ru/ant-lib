@@ -7,7 +7,7 @@
 
 typedef struct {
     uint32_t reserved_number;
-    uint32_t* element;
+    uint8_t* element;
 } reserved_element_t;
 
 
@@ -22,7 +22,7 @@ class StaticQueue
         uint32_t capacity_queue;
         reserved_element_t reserved_element;
         bool is_reserved_space_in_queue;
-        uint32_t* buffer_queue;
+        void* buffer_queue;
         
     public:
         void init(uint32_t element_size, uint32_t element_count, void* buffer);
@@ -44,11 +44,11 @@ class StaticQueue
         uint32_t get_num_last_elem();
         uint32_t get_number_of_elem();
         uint32_t get_capacity();
-        void* get_value_first_elem();
-        void* get_value_last_elem() ;
-        void* get_elem_by_number(uint32_t number_of_queue_elem);
+        uint32_t get_value_first_elem();
+        uint32_t get_value_last_elem() ;
+        uint32_t get_elem_by_number(uint32_t number_of_queue_elem);
         bool get_is_reserved_space_in_queue();
         void get_queue_info();
         bool add_reserve_element(const void* element);
-        void* get_reserve_element();
+        reserved_element_t get_reserve_element();
 };
