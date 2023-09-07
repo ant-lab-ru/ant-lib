@@ -14,6 +14,8 @@ FetchContent_MakeAvailable(googletest)
 add_subdirectory(queue)
 add_subdirectory(can-adapter)
 add_subdirectory(can-frag)
+add_subdirectory(ehas)
+add_subdirectory(mr25h)
 
 target_include_directories(libs-tests "${PROJECT_SOURCE_DIR}/interfaces/include")
 
