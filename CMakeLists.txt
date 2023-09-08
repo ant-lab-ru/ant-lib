@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(libs-tests)
+project(ant-lib-tests)
+
+set (CMAKE_CXX_STANDARD 17)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -13,11 +15,8 @@ FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(queue)
 add_subdirectory(can-adapter)
-add_subdirectory(can-frag)
 add_subdirectory(ehas)
 add_subdirectory(mr25h)
-
-target_include_directories(libs-tests "${PROJECT_SOURCE_DIR}/interfaces/include")
 
 enable_testing()
 include(GoogleTest)

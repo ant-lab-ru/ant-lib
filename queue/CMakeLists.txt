@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(static-queue)
+project(ant-static-queue)
 
 add_library(${PROJECT_NAME} STATIC)
 

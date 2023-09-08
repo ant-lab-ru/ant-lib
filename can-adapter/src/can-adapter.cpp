@@ -1,5 +1,8 @@
 #include "ant-lib/can-adapter.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 typedef struct {
     uint16_t packetSize;
     uint8_t  packetData[];
@@ -207,7 +210,7 @@ int CanAdapter::findFreeSocket(uint32_t myId)
 
     for (int i = 0; i < CAN_ADAPTER_SOCKETS_MAX; i++)
     {
-        if (this->socket[i].myId == myId) {
+        if (this->socket[i].myCanId == myId) {
             return -1;
         }
 
