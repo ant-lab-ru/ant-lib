@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "ehas-defs.h"
+
 #ifndef EHAS_MAX_DEVICES
 #define EHAS_MAX_DEVICES 50
 #endif
@@ -11,54 +13,19 @@ enum {
     EHAS_ERROR = 0,
     EHAS_WARN,
     EHAS_INFO,
+    EHAS_FF = 0xFF,
 };
 
-#define EHAS_INIT_DEVICE(dv_nm) {                                                                   \
-    static_assert(sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t) >= 1, "Less than one pack");  \
-    memset(&this->ehas, 0, sizeof(this->ehas));                                                     \
-    this->ehas.pack[0].name = "InitOk";                                                             \
-    this->ehas.pack[0].counter = 0;                                                                 \
-    this->ehas.pack[0].type = EHAS_INFO;                                                            \
-    this->ehas.pack[0].mask = 0;                                                                    \
-    this->ehas.device_name = dv_nm;                                                                 \
-}
+typedef struct {
+    uint16_t* counter;
+    char* name;
+} ehas_report_t;
 
-#define EHAS_INIT_PACK(prefix, nm, tp)  {                                                           \
-    static_assert((prefix##_##nm) < (sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t)));         \
-    static_assert((prefix##_##nm) >= 0);                                                            \
-    this->ehas.pack[(prefix##_##nm)].name = #nm;                                                    \
-    this->ehas.pack[(prefix##_##nm)].counter = 0;                                                   \
-    this->ehas.pack[(prefix##_##nm)].type = tp;                                                     \
-    this->ehas.pack[(prefix##_##nm)].mask = 0;                                                      \
-};
-
-#define EHAS_RETURN_INIT_OK() {                                                                     \
-    if (this->ehas.pack[0].counter < UINT16_MAX) {                                                  \
-        this->ehas.pack[0].counter++;                                                               \
-    }                                                                                               \
-    return 0;                                                                                       \
-}
-
-#define EHAS_RETURN_OK() {                                                                          \
-    return 0;                                                                                       \
-}
-
-#define EHAS_RETURN(idx) {                                                                          \
-    static_assert(idx < (sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t)));                     \
-    static_assert(idx >= 0);                                                                        \
-    if (this->ehas.pack[idx].counter < UINT16_MAX) {                                                \
-        this->ehas.pack[idx].counter++;                                                             \
-    }                                                                                               \
-    return -idx;                                                                                    \ 
-}
-
-#define EHAS_INCREMENT(idx) {                                                                       \
-    static_assert(idx < (sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t)));                     \
-    static_assert(idx >= 0);                                                                        \ 
-    if (this->ehas.pack[idx].counter < UINT16_MAX) {                                                \
-        this->ehas.pack[idx].counter++;                                                             \
-    }                                                                                               \
-}
+typedef struct {
+    uint16_t name_max_len;
+    uint16_t reports_len;
+    ehas_report_t reports[];
+} ehas_reports_t;
 
 typedef struct {
     uint16_t    counter;
@@ -66,7 +33,6 @@ typedef struct {
     uint8_t     mask;
     const char* name;
 } ehas_pack_t;
-
 
 class EhasPackBase
 {
@@ -86,8 +52,7 @@ class EhasPack : public EhasPackBase
 {
     public:
 
-    EhasPack():
-        EhasPackBase(L, this->pack_array){};
+    EhasPack(): EhasPackBase(L, this->pack_array){};
 
     ehas_pack_t pack_array[L] = {0};
 };
@@ -102,8 +67,14 @@ class Ehas
     public:
         bool init();
         bool add_device(EhasPackBase* device);
-        bool error_report();
+        bool get_error_report(ehas_reports_t* reports);
+        bool get_warn_report(ehas_reports_t* reports);
+        bool get_info_report(ehas_reports_t* reports);
+        bool get_uninit_report(ehas_reports_t* reports);
+        bool get_full_report(ehas_reports_t* reports);
 
     private:
+        bool common_report(uint8_t type, ehas_reports_t* reports);
+        bool write_to_report(const char* name, uint16_t counter, uint16_t* reports_ptr, ehas_reports_t* reports);
         ehas_device_t devices[EHAS_MAX_DEVICES];
 };
