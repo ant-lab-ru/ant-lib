@@ -27,6 +27,10 @@ bool Ehas::init() {
 }
 
 bool Ehas::add_device(EhasPackBase* device) {
+    if (!device) {
+        return false;
+    }
+
     for(int i = 0; i < EHAS_MAX_DEVICES; i++) {
         if (this->devices[i].active) {
             continue;
