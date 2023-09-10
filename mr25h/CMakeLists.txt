@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME} STATIC)
 target_sources(${PROJECT_NAME} PUBLIC
 "${PROJECT_SOURCE_DIR}/include/ant-lib/mr25h.h"
 "${PROJECT_SOURCE_DIR}/src/mr25h.cpp"
+"${PROJECT_SOURCE_DIR}/src/mr25h-device-api.cpp"
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC 

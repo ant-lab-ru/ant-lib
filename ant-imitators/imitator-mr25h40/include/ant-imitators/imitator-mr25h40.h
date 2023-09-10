@@ -1,6 +1,9 @@
-#include <stdint.h>
+#pragma once
 
-class ImitatorMr25h40
+#include <stdint.h>
+#include "ant-interfaces/spi-if.h"
+
+class ImitatorMr25h40 : public ISpi
 {
     public:
         ImitatorMr25h40() {};

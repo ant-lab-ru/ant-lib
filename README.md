@@ -1,2 +1,2 @@
-# libs
-Embedded libraries
+# ant-lib
+Библиотека для встроенных систем.

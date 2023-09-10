@@ -12,7 +12,6 @@
 // Ant-lib includes
 #include "ant-lib/ehas.h"
 
-
 enum
 {
     MR25H_OK = 0,
@@ -40,7 +39,7 @@ class Mr25h : public Mr25hApi
 
     private:
         ISpi* spi;
-        void little2big_address(uint32_t little, uint8_t* big);
+        void serialize_address(uint32_t addr, uint8_t* array);
         int set_lock_mode(mr25h_lock_t lock_mode);
         int write_cmd(uint8_t cmd);
         int read_status_reg(mr25h_reg_status_bf_t* status_bf);

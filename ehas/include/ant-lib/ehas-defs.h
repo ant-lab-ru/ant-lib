@@ -2,7 +2,7 @@
 
 #define EHAS_INIT_DEVICE(dv_nm) {                                                                   \
     static_assert(sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t) >= 1, "Less than one pack");  \
-    memset(&this->ehas, 0, sizeof(this->ehas));                                                     \
+    /* memset(&(this->ehas), 0, sizeof(this->ehas));  */                                            \
     this->ehas.pack[0].name = "InitOk";                                                             \
     this->ehas.pack[0].counter = 0;                                                                 \
     this->ehas.pack[0].type = EHAS_INFO;                                                            \
@@ -26,22 +26,18 @@
     return 0;                                                                                       \
 }
 
-#define EHAS_RETURN_OK() {                                                                          \
-    return 0;                                                                                       \
-}
-
 #define EHAS_RETURN(idx) {                                                                          \
     static_assert(idx < (sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t)));                     \
     static_assert(idx >= 0);                                                                        \
     if (this->ehas.pack[idx].counter < UINT16_MAX) {                                                \
         this->ehas.pack[idx].counter++;                                                             \
     }                                                                                               \
-    return -idx;                                                                                    \ 
+    return -idx;                                                                                    \
 }
 
 #define EHAS_INCREMENT(idx) {                                                                       \
     static_assert(idx < (sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t)));                     \
-    static_assert(idx >= 0);                                                                        \ 
+    static_assert(idx >= 0);                                                                        \
     if (this->ehas.pack[idx].counter < UINT16_MAX) {                                                \
         this->ehas.pack[idx].counter++;                                                             \
     }                                                                                               \

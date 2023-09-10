@@ -18,6 +18,10 @@ add_subdirectory(can-adapter)
 add_subdirectory(ehas)
 add_subdirectory(mr25h)
 
+add_subdirectory(ant-imitators/imitator-mr25h40)
+
+add_subdirectory(tests/test-mr25h)
+
 enable_testing()
 include(GoogleTest)
 
