@@ -11,8 +11,12 @@ enum
     CCSDS_EPP_OK = 0,
     CCSDS_EPP_ERROR_NullPtr,
     CCSDS_EPP_ERROR_SizeTooBig,
-    CCSDS_EPP_ERROR_LenghtTooSmall,
     CCSDS_EPP_ERROR_SizeTooSmall,
+    CCSDS_EPP_ERROR_SizeInvalid,
+    CCSDS_EPP_ERROR_LenghtTooSmall,
+    CCSDS_EPP_ERROR_InvalPVN,
+    CCSDS_EPP_ERROR_InvalEPID,
+    CCSDS_EPP_ERROR_InvalLenOfLen,
     CCSDS_EPP_NumberOfTypes,
 };
 
@@ -65,10 +69,14 @@ class CcsdsEpp
         CcsdsEpp(ccsds_epp_lenoflen_t lenoflen_enc):
             _lenoflen(lenoflen_enc) {
                 EHAS_INIT_NOINIT_DEVICE("CcsdsEpp");
-                EHAS_INIT_PACK(CCSDS_EPP_ERROR, NullPtr, EHAS_ERROR);
-                EHAS_INIT_PACK(CCSDS_EPP_ERROR, SizeTooBig, EHAS_ERROR);
+                EHAS_INIT_PACK(CCSDS_EPP_ERROR, NullPtr,        EHAS_ERROR);
+                EHAS_INIT_PACK(CCSDS_EPP_ERROR, SizeTooBig,     EHAS_ERROR);
+                EHAS_INIT_PACK(CCSDS_EPP_ERROR, SizeTooSmall,   EHAS_ERROR);
+                EHAS_INIT_PACK(CCSDS_EPP_ERROR, SizeInvalid,    EHAS_ERROR);
                 EHAS_INIT_PACK(CCSDS_EPP_ERROR, LenghtTooSmall, EHAS_ERROR);
-                EHAS_INIT_PACK(CCSDS_EPP_ERROR, SizeTooSmall, EHAS_ERROR);
+                EHAS_INIT_PACK(CCSDS_EPP_ERROR, InvalPVN,       EHAS_ERROR);
+                EHAS_INIT_PACK(CCSDS_EPP_ERROR, InvalEPID,      EHAS_ERROR);
+                EHAS_INIT_PACK(CCSDS_EPP_ERROR, InvalLenOfLen,  EHAS_ERROR);
             };
 
         int encapsulate(uint8_t* data, uint32_t size, uint8_t* buffer, uint32_t lenght);
