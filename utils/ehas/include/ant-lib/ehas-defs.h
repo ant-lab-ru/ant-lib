@@ -55,3 +55,5 @@
         this->ehas.pack[idx].counter++;                                                             \
     }                                                                                               \
 }
+
+#define EHAS_RISE(idx) {}
