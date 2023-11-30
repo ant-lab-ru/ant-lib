@@ -1,25 +1,40 @@
 #include "ant-lib/ccsds-tm-vc-send.h"
 
 #include "string.h"
+#include "stdlib.h"
 
 #include "ant-lib/math-defs.h"
 
-int CcsdsTmVcSend::VCP_request(uint8_t* data, uint32_t size)
+template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VCP_request(uint8_t* data, uint32_t size)
 {
-    return _packet_processing(data, size);
+    return _packet_processing_add_packet(data, size);
 }
 
-int CcsdsTmVcSend::handle()
+template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VC_FSH_request(uint8_t* data, uint32_t size)
+{
+    if (size > FSH) {
+        return -1;
+    }
+
+    memcpy(_FSH_data, data, size);
+    return size;
+}
+
+template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::handle()
 {
     if (_frame_request) {
-        _virtual_channel_generation(_current_first_header_ptr);
+        _packet_processing_release();
         _frame_request = false;
     }
 
     return CCSDS_TM_OK;
 }
 
-int CcsdsTmVcSend::_packet_processing(uint8_t* data, uint32_t size)
+template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_add_packet(uint8_t* data, uint32_t size)
 {
     int frame_max_data_size = _encription ? _enc_data_size : _data_size;
     _current_first_header_ptr = _df_buffer_current_size; // ERROR FIXME
@@ -37,7 +52,7 @@ int CcsdsTmVcSend::_packet_processing(uint8_t* data, uint32_t size)
         _df_buffer_current_size += df_size;
 
         if (_df_buffer_current_size >= frame_max_data_size) {
-            _virtual_channel_generation(_current_first_header_ptr);
+            _virtual_channel_generation(_df_buffer, frame_max_data_size, _current_first_header_ptr);
             _df_buffer_current_size = 0;
             _current_first_header_ptr = CCSDS_TM_NO_FIRST_HEADER_PTR;
         }
@@ -46,11 +61,25 @@ int CcsdsTmVcSend::_packet_processing(uint8_t* data, uint32_t size)
     return bytes_moved;
 }
 
-int CcsdsTmVcSend::_virtual_channel_generation(uint16_t first_header_ptr)
+template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_release()
+{
+    if (_df_buffer_current_size == 0) {
+        return 0;
+    }
+
+    int frame_max_data_size = _encription ? _enc_data_size : _data_size;
+    _ep->generate_idle_packet(_df_buffer + _df_buffer_current_size, frame_max_data_size - _df_buffer_current_size);
+
+    return _virtual_channel_generation(_df_buffer, frame_max_data_size, _current_first_header_ptr);
+}
+
+template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_virtual_channel_generation(uint8_t* data, uint16_t size, uint16_t first_header_ptr)
 {
     uint8_t* new_frame = (uint8_t*)_q.reserve();
 
-    sdlp_tm_primary_header_t pheader = {0};
+    ccsds_tm_primary_header_t pheader = {0};
     pheader.bf.TFVN     = CCSDS_TM_TFVN;
     pheader.bf.SCID     = _SCID;
     pheader.bf.VCID     = _VCID;
@@ -73,13 +102,18 @@ int CcsdsTmVcSend::_virtual_channel_generation(uint16_t first_header_ptr)
     new_frame[5] = pheader.bytes.d4; // |
 
     // Insert VC_FSH
+    ccsds_tm_secondary_header_head_t* sheader = (ccsds_tm_secondary_header_head_t*)(new_frame + CCSDS_TM_PHEADER_SIZE);
+    sheader->version = CCSDS_TM_FSH_VERSION;
+    sheader->length = FSH;
+    memcpy(sheader->data, _FSH_data, FSH);
 
     // SDLS encription
 
     return CCSDS_TM_OK;
 }
 
-int CcsdsTmVcSend::get_frame(uint8_t* buffer, uint32_t lenght)
+template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::get_frame(uint8_t* buffer, uint32_t lenght)
 {
     if (_q.empty()) {
         _frame_request = true;
@@ -89,8 +123,8 @@ int CcsdsTmVcSend::get_frame(uint8_t* buffer, uint32_t lenght)
     uint8_t* frame = (uint8_t*)_q.remove();
 
     if (frame) {
-        memcpy(buffer, frame, _frame_size);
+        memcpy(buffer, frame, F);
     }
 
-    return _frame_size;
+    return F;
 }

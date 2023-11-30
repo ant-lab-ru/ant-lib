@@ -6,6 +6,18 @@
 constexpr uint8_t CCSDS_EPP_PVN = 7;
 constexpr uint8_t CCSDS_EPP_EPID = 0;
 
+typedef enum: uint8_t
+{
+    CCSDS_EPP_IDLE            = 0,
+    CCSDS_EPP_LTP             = 1,
+    CCSDS_EPP_IPE             = 2,
+    CCSDS_EPP_CFDP            = 3,
+    CCSDS_EPP_BP              = 4,
+    CCSDS_EPP_NoEntry         = 5,
+    CCSDS_EPP_EXTENDED        = 6,
+    CCSDS_EPP_MissionSpecific = 7,
+} ccsds_epp_packet_type_t;
+
 enum
 {
     CCSDS_EPP_OK = 0,
@@ -29,8 +41,9 @@ typedef enum
     CCSDS_EPP_LENOFLEN_NumberOfTypes,
 } ccsds_epp_lenoflen_t;
 
-constexpr uint8_t ccsds_epp_header_len[CCSDS_EPP_LENOFLEN_NumberOfTypes] = { 1, 2, 4, 8 };
-constexpr uint32_t ccsds_epp_max_data_len[CCSDS_EPP_LENOFLEN_NumberOfTypes] = { 0, 0xFD, 0xFFFB, 0xFFFFFFF7 };
+constexpr uint8_t  ccsds_epp_header_len[CCSDS_EPP_LENOFLEN_NumberOfTypes]     = { 1, 2, 4, 8 };
+constexpr uint32_t ccsds_epp_max_data_len[CCSDS_EPP_LENOFLEN_NumberOfTypes]   = { 0, 0xFD, 0xFFFB, 0xFFFFFFF7 };
+constexpr uint32_t ccsds_epp_max_packet_len[CCSDS_EPP_LENOFLEN_NumberOfTypes] = { 1, 0xFF, 0xFFFF, 0xFFFFFFFF };
 
 typedef struct
 {
@@ -66,8 +79,7 @@ typedef struct
 class CcsdsEpp
 {
     public:
-        CcsdsEpp(ccsds_epp_lenoflen_t lenoflen_enc):
-            _lenoflen(lenoflen_enc) {
+        CcsdsEpp() {
                 EHAS_INIT_NOINIT_DEVICE("CcsdsEpp");
                 EHAS_INIT_PACK(CCSDS_EPP_ERROR, NullPtr,        EHAS_ERROR);
                 EHAS_INIT_PACK(CCSDS_EPP_ERROR, SizeTooBig,     EHAS_ERROR);
@@ -79,10 +91,10 @@ class CcsdsEpp
                 EHAS_INIT_PACK(CCSDS_EPP_ERROR, InvalLenOfLen,  EHAS_ERROR);
             };
 
-        int encapsulate(uint8_t* data, uint32_t size, uint8_t* buffer, uint32_t lenght);
-        int deencapsulate(uint8_t* data, uint32_t size, uint8_t* buffer, uint32_t lenght);
+        int encapsulate(uint8_t* data, uint32_t size, ccsds_epp_packet_type_t type, uint8_t* buffer, uint32_t lenght);
+        int deencapsulate(uint8_t* data, uint32_t size, ccsds_epp_packet_type_t* type, uint8_t* buffer, uint32_t lenght);
+        int generate_idle_packet(uint8_t* buffer, uint32_t size);
 
     private:
-        const ccsds_epp_lenoflen_t _lenoflen;
         EhasPack<CCSDS_EPP_NumberOfTypes> ehas;
 };
