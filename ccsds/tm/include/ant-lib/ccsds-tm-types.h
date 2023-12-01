@@ -47,3 +47,12 @@ typedef struct {
     uint8_t version : 2;
     uint8_t data[];
 } ccsds_tm_secondary_header_head_t;
+
+typedef struct {
+    uint8_t VCID;
+    uint8_t vc_priority;
+    uint8_t* buffer;
+    uint32_t buffer_lenght;
+    CcsdsEpp* ep;
+    CcsdsSdls* sdls;
+} ccsds_tm_vc_send_init_struct_t;

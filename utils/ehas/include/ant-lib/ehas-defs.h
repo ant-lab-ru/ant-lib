@@ -57,3 +57,18 @@
 }
 
 #define EHAS_RISE(idx) {}
+
+#define EHAS_UP(idx) {}
+
+#define EHAS_INIT_RC(prefix, nm, tp)  {                                                                \
+    static_assert((prefix##_##nm) < (sizeof(this->ehas.pack_array) / sizeof(ehas_pack_t)), "Big index"); \
+    static_assert((prefix##_##nm) >= 0, "Small index");                                                  \
+    this->ehas.pack[(prefix##_##nm)].name = #nm;                                                         \
+    this->ehas.pack[(prefix##_##nm)].counter = 0;                                                        \
+    this->ehas.pack[(prefix##_##nm)].type = tp;                                                          \
+    this->ehas.pack[(prefix##_##nm)].mask = 0;                                                           \
+};        
+
+#define EHAS_INIT(name) {}
+
+#define EHAS_PACK(n) \

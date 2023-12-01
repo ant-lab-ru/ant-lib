@@ -8,26 +8,60 @@
 template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
 int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VCP_request(uint8_t* data, uint32_t size)
 {
+    if (!_init_done) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcNotInit);
+        return -CCSDS_TM_VC_RC_VcNotInit;
+    }
+
+    if (!data) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcNullPtr);
+        return -CCSDS_TM_VC_RC_VcNullPtr;
+    }
+
     return _packet_processing_add_packet(data, size);
 }
 
 template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VC_FSH_request(uint8_t* data, uint32_t size)
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VC_FSH_request(uint8_t* data, uint16_t size)
 {
+    if (!_init_done) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcNotInit);
+        return -CCSDS_TM_VC_RC_VcNotInit;
+    }
+
+    if (!VC_FSH_service_enable) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcFshNotEnable);
+        return -CCSDS_TM_VC_RC_VcFshNotEnable;
+    }
+
+    if (!data) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcNullPtr);
+        return -CCSDS_TM_VC_RC_VcNullPtr;
+    }
+
     if (size > FSH) {
-        return -1;
+        size = FSH;
     }
 
     memcpy(_FSH_data, data, size);
+
+    if (size < FSH) {
+        memset(_FSH_data + size, 0, FSH - size);
+    }
+
     return size;
 }
 
 template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
 int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::handle()
 {
-    if (_frame_request) {
+    if (!_init_done) {
+        return -CCSDS_TM_VC_RC_VcNotInit;
+    }
+
+    if (_release_signal) {
         _packet_processing_release();
-        _frame_request = false;
+        _release_signal = false;
     }
 
     return CCSDS_TM_OK;
@@ -37,7 +71,9 @@ template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
 int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_add_packet(uint8_t* data, uint32_t size)
 {
     int frame_max_data_size = _encription ? _enc_data_size : _data_size;
-    _current_first_header_ptr = _df_buffer_current_size; // ERROR FIXME
+    if (_current_first_header_ptr == CCSDS_TM_NO_FIRST_HEADER_PTR) {
+        _current_first_header_ptr = _df_buffer_current_size;
+    }
 
     uint32_t bytes_moved = 0;
 
@@ -64,29 +100,53 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_add_packet(uint8_t* dat
 template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
 int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_release()
 {
-    if (_df_buffer_current_size == 0) {
+    // There is no pending data
+    if (_data_field_size == 0) {
         return 0;
     }
 
-    int frame_max_data_size = _encription ? _enc_data_size : _data_size;
-    _ep->generate_idle_packet(_df_buffer + _df_buffer_current_size, frame_max_data_size - _df_buffer_current_size);
+    uint16_t frame_data_size = SDLS_enable ? _enc_data_size : _data_size;
 
-    return _virtual_channel_generation(_df_buffer, frame_max_data_size, _current_first_header_ptr);
+    if (_data_field_size > frame_data_size) {
+        _data_field_size = 0;
+        _first_header_ptr = CCSDS_TM_NO_FIRST_HEADER_PTR;
+        EHAR_UP(CCSDS_TM_VC_RC_VcMathError);
+        return -CCSDS_TM_VC_RC_VcMathError;
+    }
+
+    uint16_t idle_size = frame_data_size - _data_field_size;
+    int rc = _ep->generate_idle_packet(_data_field_buffer + _data_field_size, idle_size);
+    if (rc != idle_size) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcEppIdle);
+        return -CCSDS_TM_VC_RC_VcEppIdle;
+    }
+
+    return _virtual_channel_generation(_data_field_buffer, frame_data_size, _first_header_ptr);
 }
 
 template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
 int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_virtual_channel_generation(uint8_t* data, uint16_t size, uint16_t first_header_ptr)
 {
+    uint16_t frame_data_size = SDLS_enable ? _enc_data_size : _data_size;
+    if (size != frame_data_size) {
+        EHAR_UP(CCSDS_TM_VC_RC_VcSizeInval);
+        return -CCSDS_TM_VC_RC_VcSizeInval;
+    }
+
     uint8_t* new_frame = (uint8_t*)_q.reserve();
+    if (!new_frame) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcQueueFull);
+        return -CCSDS_TM_VC_RC_VcQueueFull;
+    }
 
     ccsds_tm_primary_header_t pheader = {0};
     pheader.bf.TFVN     = CCSDS_TM_TFVN;
-    pheader.bf.SCID     = _SCID;
-    pheader.bf.VCID     = _VCID;
+    pheader.bf.SCID     = SCID;
+    pheader.bf.VCID     = VCID;
     pheader.bf.OCF_flag = 0;
 
     pheader.bf.MC_frame_count = 0; // Fills later
-    pheader.bf.VC_frame_count = _vc_frame_counter % 0xFF;
+    pheader.bf.VC_frame_count = (_VC_frame_counter++) % 0xFF;
 
     pheader.bf.secondary_header_flag = CCSDS_TM_SECONDARY_HEADER_FLAG;
     pheader.bf.sync_flag             = CCSDS_TM_SYNC_FLAG;
@@ -101,30 +161,61 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_virtual_channel_generation(uint8_t* data,
     new_frame[4] = pheader.bytes.d5; // |-> fliped for correct bit fields order
     new_frame[5] = pheader.bytes.d4; // |
 
-    // Insert VC_FSH
-    ccsds_tm_secondary_header_head_t* sheader = (ccsds_tm_secondary_header_head_t*)(new_frame + CCSDS_TM_PHEADER_SIZE);
-    sheader->version = CCSDS_TM_FSH_VERSION;
-    sheader->length = FSH;
-    memcpy(sheader->data, _FSH_data, FSH);
+    // Insert VC_FSH if enabled
+    if (VC_FSH_enable) {
+        ccsds_tm_secondary_header_head_t* sheader = (ccsds_tm_secondary_header_head_t*)(new_frame + CCSDS_TM_PHEADER_SIZE);
+        sheader->version = CCSDS_TM_FSH_VERSION;
+        sheader->length = FSH;
+        memcpy(sheader->data, _VC_FSH_buffer, FSH);
+    }
+    else {
+        memset(sheader, 0, FSH + CCSDS_TM_SHEADER_HEAD_SIZE);
+    }
 
-    // SDLS encription
+    if (_encription) {
+        int rc = _sdls->apply_security(data, size, new_frame + _data_offs, _data_size); // OUT buffer len equals _data_size not _enc_data_size
+        if (rc != _data_size) {
+            EHAS_UP(CCSDS_TM_VC_RC_VcSdlsError);
+            return -CCSDS_TM_VC_RC_VcSdlsError;
+        }
+    }
+    else {
+        memcpy(new_frame + _data_offs, data, size);
+    }
 
-    return CCSDS_TM_OK;
+    return frame_data_size;
 }
 
 template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::get_frame(uint8_t* buffer, uint32_t lenght)
+int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::get_VC_frame(uint8_t* buffer, uint16_t lenght)
 {
+    if (!_init_done) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcNotInit);
+        return -CCSDS_TM_VC_RC_VcNotInit;
+    }
+
+    if (!buffer) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcNullPtr);
+        return -CCSDS_TM_VC_RC_VcNullPtr;
+    }
+
     if (_q.empty()) {
-        _frame_request = true;
+        _release_signal = true;
         return 0;
+    }
+
+    if (lenght < F) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcLenghtSmall);
+        return -CCSDS_TM_VC_RC_VcLenghtSmall;
     }
 
     uint8_t* frame = (uint8_t*)_q.remove();
 
-    if (frame) {
-        memcpy(buffer, frame, F);
+    if (!frame) {
+        EHAS_UP(CCSDS_TM_VC_RC_VcQueueEmpty);
+        return -CCSDS_TM_VC_RC_VcQueueEmpty;
     }
 
+    memcpy(buffer, frame, F);
     return F;
 }
