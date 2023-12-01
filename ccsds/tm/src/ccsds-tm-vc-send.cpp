@@ -70,27 +70,26 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::handle()
 template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
 int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_add_packet(uint8_t* data, uint32_t size)
 {
-    int frame_max_data_size = _encription ? _enc_data_size : _data_size;
-    if (_current_first_header_ptr == CCSDS_TM_NO_FIRST_HEADER_PTR) {
-        _current_first_header_ptr = _df_buffer_current_size;
+    int frame_data_size = SDLS_enable ? _enc_data_size : _data_size;
+    if (_first_header_ptr == CCSDS_TM_NO_FIRST_HEADER_PTR) {
+        _first_header_ptr = _data_field_size;
     }
 
     uint32_t bytes_moved = 0;
 
     while (bytes_moved < size)
     {
-        uint32_t df_max_size = ANT_MIN(_df_buffer_current_size, frame_max_data_size);
-        uint32_t df_size = ANT_MIN(size - bytes_moved, df_max_size);
-        uint8_t* df_ptr = _df_buffer + _df_buffer_current_size;
+        uint32_t df_size = ANT_MIN(size - bytes_moved, frame_data_size - _data_field_size);
+        uint8_t* df_ptr = _data_field_buffer + _data_field_size;
 
         memcpy(df_ptr, data + bytes_moved, df_size);
         bytes_moved += df_size;
-        _df_buffer_current_size += df_size;
+        _data_field_size += df_size;
 
-        if (_df_buffer_current_size >= frame_max_data_size) {
-            _virtual_channel_generation(_df_buffer, frame_max_data_size, _current_first_header_ptr);
-            _df_buffer_current_size = 0;
-            _current_first_header_ptr = CCSDS_TM_NO_FIRST_HEADER_PTR;
+        if (_data_field_size >= frame_data_size) {
+            _virtual_channel_generation(_data_field_buffer, frame_data_size, _first_header_ptr);
+            _data_field_size = 0;
+            _first_header_ptr = CCSDS_TM_NO_FIRST_HEADER_PTR;
         }
     }
 

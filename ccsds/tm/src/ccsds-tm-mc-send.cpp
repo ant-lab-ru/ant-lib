@@ -42,15 +42,15 @@ int CcsdsTmMcSend<VCC,F,FSH,SDLSH,SDLST>::_virtual_channel_multiplexing(uint8_t*
 
         rc = vc[idx].get_VC_frame(buffer, lenght);
 
+        if (rc == 0) {
+            _scheduler->index_empty();
+        }
+
         if (rc < 0) {
-            return -40;
+            return -14;
         }
-
-        if (rc > 0) {
-            return rc;
-        }
-
-        _scheduler->index_empty();
+        
+        return rc;
     }
 
     // Return IOD frame
