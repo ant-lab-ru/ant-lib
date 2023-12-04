@@ -38,4 +38,5 @@ private:
 
     int _virtual_channel_multiplexing(uint8_t* buffer, uint16_t lenght);
     int _master_channel_generation(uint8_t* buffer, uint16_t lenght);
+    int _generate_OID_frame(uint8_t* buffer, uint16_t lenght);
 };

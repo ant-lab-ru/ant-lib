@@ -53,5 +53,11 @@ int CcsdsTmMcSend<VCC,F,FSH,SDLSH,SDLST>::_virtual_channel_multiplexing(uint8_t*
         return rc;
     }
 
-    // Return IOD frame
+    return _generate_OID_frame(buffer, lenght);
+}
+
+template<uint8_t VCC, uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
+int CcsdsTmMcSend<VCC,F,FSH,SDLSH,SDLST>::_generate_OID_frame(uint8_t* buffer, uint16_t lenght)
+{
+    return -1;
 }
