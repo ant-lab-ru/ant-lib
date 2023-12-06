@@ -47,4 +47,4 @@ int Hmc5883l::read_reg(uint8_t addr)
 	return read_buf[0];
 }
 
-
+ehas_pack_t Hmc5883l::ehas_pack[HMC5883L_NumberOfTypes] = {0};

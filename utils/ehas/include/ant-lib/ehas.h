@@ -48,7 +48,7 @@ class EhasPackBase
 template<int L>
 class EhasPack : public EhasPackBase
 {
-    public:
+public:
 
     EhasPack(const char* name_i, ehas_pack_t* pack_i):
         EhasPackBase(name_i, pack_i, L, this->counters){};

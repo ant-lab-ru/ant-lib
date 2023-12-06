@@ -5,7 +5,7 @@
 #include "hmc5883l-regs.h"
 
 // Interfaces
-#include "ant-hwi/i2c-if.h"
+#include "ant-lib/if-i2c.h"
 
 // Ant-lib includes
 #include "ant-lib/ehas.h"
@@ -20,14 +20,17 @@ enum
 
 class Hmc5883l
 {
-    public:
+public:
+	Hmc5883l()
+		: EHAS_INIT(Hmc5883l, "hmc") {};
         int init(II2c* i_i2c);
         int check();
+
+	    EHAS_PACK(HMC5883L_NumberOfTypes);
 
     private:
         II2c* i2c_;
         int read_reg(uint8_t addr);
         int write_reg(uint8_t addr, uint8_t value);
-        EhasPack<HMC5883L_NumberOfTypes> ehas;
 };
 
