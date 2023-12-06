@@ -5,8 +5,7 @@
 
 #include "ant-lib/math-defs.h"
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VCP_request(uint8_t* data, uint32_t size)
+int CcsdsTmVcSend::VCP_request(uint8_t* data, uint32_t size)
 {
     if (!_init_done) {
         EHAS_UP(CCSDS_TM_VC_RC_VcNotInit);
@@ -21,8 +20,7 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VCP_request(uint8_t* data, uint32_t size)
     return _packet_processing_add_packet(data, size);
 }
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VC_FSH_request(uint8_t* data, uint16_t size)
+int CcsdsTmVcSend::VC_FSH_request(uint8_t* data, uint16_t size)
 {
     if (!_init_done) {
         EHAS_UP(CCSDS_TM_VC_RC_VcNotInit);
@@ -52,8 +50,7 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::VC_FSH_request(uint8_t* data, uint16_t siz
     return size;
 }
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::handle()
+int CcsdsTmVcSend::handle()
 {
     if (!_init_done) {
         return -CCSDS_TM_VC_RC_VcNotInit;
@@ -67,8 +64,7 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::handle()
     return CCSDS_TM_OK;
 }
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_add_packet(uint8_t* data, uint32_t size)
+int CcsdsTmVcSend::_packet_processing_add_packet(uint8_t* data, uint32_t size)
 {
     int frame_data_size = SDLS_enable ? _enc_data_size : _data_size;
     if (_first_header_ptr == CCSDS_TM_NO_FIRST_HEADER_PTR) {
@@ -96,8 +92,7 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_add_packet(uint8_t* dat
     return bytes_moved;
 }
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_release()
+int CcsdsTmVcSend::_packet_processing_release()
 {
     // There is no pending data
     if (_data_field_size == 0) {
@@ -123,8 +118,7 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_packet_processing_release()
     return _virtual_channel_generation(_data_field_buffer, frame_data_size, _first_header_ptr);
 }
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_virtual_channel_generation(uint8_t* data, uint16_t size, uint16_t first_header_ptr)
+int CcsdsTmVcSend::_virtual_channel_generation(uint8_t* data, uint16_t size, uint16_t first_header_ptr)
 {
     uint16_t frame_data_size = SDLS_enable ? _enc_data_size : _data_size;
     if (size != frame_data_size) {
@@ -185,8 +179,7 @@ int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::_virtual_channel_generation(uint8_t* data,
     return frame_data_size;
 }
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
-int CcsdsTmVcSend<F,FSH,SDLSH,SDLST>::get_VC_frame(uint8_t* buffer, uint16_t lenght)
+int CcsdsTmVcSend::get_VC_frame(uint8_t* buffer, uint16_t lenght)
 {
     if (!_init_done) {
         EHAS_UP(CCSDS_TM_VC_RC_VcNotInit);

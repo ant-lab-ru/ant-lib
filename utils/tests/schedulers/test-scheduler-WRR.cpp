@@ -1,21 +1,25 @@
 #include "ant-lib/scheduler-WRR.h"
 #include <gtest/gtest.h>
 
-template <typename T>
-class SchedulerWRRTester : public ::testing::Test{};
+constexpr uint32_t N = 50;
 
-using test_types = ::testing::Types<
-    std::integral_constant<int,2>,
-    std::integral_constant<int,3>, 
-    std::integral_constant<int,4>>;
-
-TYPED_TEST_SUITE(SchedulerWRRTester, test_types);
-
-TYPED_TEST(SchedulerWRRTester, Test1)
+TEST(SchedulerWRR, Empty)
 {
-    static constexpr int n = TypeParam::value;
-    SchedulerWRR<n> s;
+    SchedulerWRR<N> s;
 
-    EXPECT_EQ( 2 , 2 );
-    // EXPECT_EQ( s.get_index() , 0 );
+    uint16_t indexes[N] = {0};
+
+    for (int i = 0; i < N; i++) {
+        int idx = s.get_index();
+        s.index_empty();
+
+        EXPECT_GE( idx, 0 );
+        EXPECT_LE( idx, N );
+        indexes[idx]++;
+    }
+
+    for (int i = 0; i < N; i++) {
+        EXPECT_EQ( indexes[i], 1 );
+    }
 }
+

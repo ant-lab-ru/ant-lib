@@ -1,7 +1,7 @@
 enable_testing()
 
 add_executable(test-scheduler-WRR
-    "${PROJECT_SOURCE_DIR}/tests/schedulers/test-scheduler-WRR.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/test-scheduler-WRR.cpp"
 )
 
 target_link_libraries(test-scheduler-WRR PUBLIC

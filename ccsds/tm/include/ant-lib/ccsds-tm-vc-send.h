@@ -25,27 +25,23 @@ enum
     CCSDS_TM_VC_RC_NumberOfTypes,
 };
 
-/**
- * @brief CcsdsTmVcSend class
- * 
- * @tparam F - frame size;
- * @tparam FSH - frame secondary header data size;
- * @tparam SDLSH - frame SDLS header size (used if SDLS_enable == true)
- * @tparam SDLST - frame SDLS trailer size (used if SDLS_enable == true)
- */
 
-template<uint16_t F, uint16_t FSH, uint16_t SDLSH, uint16_t SDLST>
 class CcsdsTmVcSend
 {
 public:
-    CcsdsTmVcSend(const char* ehas_name):
-        _data_size    (F - CCSDS_TM_PHEADER_SIZE - CCSDS_TM_SHEADER_HEAD_SIZE - FSH                 ),
-        _enc_data_size(F - CCSDS_TM_PHEADER_SIZE - CCSDS_TM_SHEADER_HEAD_SIZE - FSH - SDLSH - SDLST ),
+    CcsdsTmVcSend(const char* ehas_name, ccsds_tm_frame_cfg_t frame_cfg,
+        uint8_t VCID, uint16_t SCID, uint8_t* buffer, uint32_t buffer_lenght,
+        CcsdsEpp* ep, CcsdsSdls* sdls)
+        :   VCID(VCID),
+            SCID(SCID),
+            _frame_cfg(frame_cfg),
 
-        _data_offs    (CCSDS_TM_PHEADER_SIZE + CCSDS_TM_SHEADER_HEAD_SIZE + FSH           ),
-        _enc_data_offs(CCSDS_TM_PHEADER_SIZE + CCSDS_TM_SHEADER_HEAD_SIZE + FSH + SDLSH   )
+            _data_size     (frame_cfg.frame_size - CCSDS_TM_PHEADER_SIZE - CCSDS_TM_SHEADER_HEAD_SIZE - frame_cfg.FSH_data_size ),
+            _enc_data_size (frame_cfg.frame_size - CCSDS_TM_PHEADER_SIZE - CCSDS_TM_SHEADER_HEAD_SIZE - frame_cfg.FSH_data_size - frame_cfg.SDLS_header_size - frame_cfg.SDLS_trailer_size ),
+            _data_offs     (CCSDS_TM_PHEADER_SIZE + CCSDS_TM_SHEADER_HEAD_SIZE + frame_cfg.FSH_data_size ),
+            _enc_data_offs (CCSDS_TM_PHEADER_SIZE + CCSDS_TM_SHEADER_HEAD_SIZE + frame_cfg.FSH_data_size + frame_cfg.SDLS_header_size ),
+            EHAS_INIT(ehas_name)
         {
-            EHAS_INIT(ehas_name);
             EHAS_INIT_RC(CCSDS_TM_VC, RC_VcNullPtr,      EHAS_ERROR);
             EHAS_INIT_RC(CCSDS_TM_VC, RC_VcNotInit,      EHAS_ERROR);
             EHAS_INIT_RC(CCSDS_TM_VC, RC_VcFshNotEnable, EHAS_ERROR);
@@ -63,10 +59,10 @@ public:
     int VC_FSH_request(uint8_t* data, uint16_t size);
 
     // Parameters
-    bool VC_FSH_enable = false;
-    bool SDLS_enable   = false;
-    uint8_t  VCID      = 0;
-    uint16_t SCID      = 0;
+    bool VC_FSH_enable  = false;
+    bool SDLS_enable    = false;
+    const uint8_t  VCID;
+    const uint16_t SCID;
 
     // Internal interfaces
     int get_VC_frame(uint8_t* buffer, uint16_t lenght);
@@ -80,15 +76,15 @@ public:
 
 private:
     // Buffers
-    uint16_t    _first_header_ptr   = CCSDS_TM_NO_FIRST_HEADER_PTR;
-    uint8_t     _VC_FSH_buffer[FSH] = {0};
+    uint16_t    _first_header_ptr = CCSDS_TM_NO_FIRST_HEADER_PTR;
+    uint16_t    _data_field_size  = 0;
     uint8_t*    _data_field_buffer;
+    uint8_t*    _VC_FSH_buffer;
     StaticQueue _q;
 
     // Private Methods and fields
     int _packet_processing_add_packet(uint8_t* data, uint32_t size);
     int _packet_processing_release();
-    uint16_t _data_field_size = 0;
 
     int _virtual_channel_generation(uint8_t* data, uint16_t size, uint16_t first_header_ptr);
 
@@ -100,6 +96,8 @@ private:
     uint32_t   _VC_frame_counter = 0;
 
     // Frame info
+
+    const ccsds_tm_frame_cfg_t _frame_cfg;
     const uint16_t _data_size;
     const uint16_t _data_offs;
     const uint16_t _enc_data_size;

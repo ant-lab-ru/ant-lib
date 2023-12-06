@@ -43,14 +43,19 @@ typedef union {
 } ccsds_tm_primary_header_t;
 
 typedef struct {
+    const uint16_t frame_size;
+    const uint16_t FSH_data_size;
+    const uint8_t  SDLS_header_size;
+    const uint8_t  SDLS_trailer_size;
+} ccsds_tm_frame_cfg_t;
+
+typedef struct {
     uint8_t length : 6;
     uint8_t version : 2;
     uint8_t data[];
 } ccsds_tm_secondary_header_head_t;
 
 typedef struct {
-    uint8_t VCID;
-    uint8_t vc_priority;
     uint8_t* buffer;
     uint32_t buffer_lenght;
     CcsdsEpp* ep;
