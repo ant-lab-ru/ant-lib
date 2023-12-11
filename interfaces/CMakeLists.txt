@@ -11,6 +11,7 @@ target_sources(${PROJECT_NAME} PUBLIC
     "${PROJECT_SOURCE_DIR}/include/ant-lib/if-spi.h"
     "${PROJECT_SOURCE_DIR}/include/ant-lib/if-wdt.h"
     "${PROJECT_SOURCE_DIR}/include/ant-lib/if-scheduler.h"
+    "${PROJECT_SOURCE_DIR}/include/ant-lib/if-gpio.h"
 )
 
 target_include_directories(${PROJECT_NAME} INTERFACE "${PROJECT_SOURCE_DIR}/include")
