@@ -72,7 +72,7 @@ typedef enum : uint8_t
 
 typedef struct 
 {
-	uint8_t    : 4;
+	uint8_t    : 5;
 	uint8_t GN : 3;
 } hmc5883l_reg_b_bf_t;
 

@@ -52,7 +52,7 @@ int Hmc5883l::get_single_xyz_calibrated(int16_t* x, int16_t* y, int16_t* z)
 
 int Hmc5883l::get_single_xyz(int16_t* x, int16_t* y, int16_t* z)
 {
-	int rc = set_mode(HMC5883L_MODE_SINGLE_MEASURE);
+	int rc = start_measure();
 	if (rc != HMC5883L_OK) {
 		return rc;
 	}
@@ -87,12 +87,7 @@ int Hmc5883l::self_test()
 		return rc;
 	}
 
-	rc = set_averaging(HMC5883L_AVERAGING_8);
-	if (rc != HMC5883L_OK) {
-		return rc;
-	}
-
-	rc = set_bias_mode(HMC5883L_BIAS_MODE_POSITIVE);
+	rc = set_config_a(HMC5883L_AVERAGING_8, HMC5883L_DATARATE_15Hz, HMC5883L_BIAS_MODE_POSITIVE);
 	if (rc != HMC5883L_OK) {
 		return rc;
 	}
@@ -103,7 +98,7 @@ int Hmc5883l::self_test()
 	for (int i = 0; i < self_test_averaging; i++) {
 		rc = get_single_xyz(&x, &y, &z);
 		if (rc != HMC5883L_OK) {
-			set_bias_mode(HMC5883L_BIAS_MODE_NORMAL);
+			set_config_a(HMC5883L_AVERAGING_1, HMC5883L_DATARATE_15Hz, HMC5883L_BIAS_MODE_NORMAL);
 			return rc;
 		}
 		sum_x += x;
@@ -111,7 +106,7 @@ int Hmc5883l::self_test()
 		sum_z += z;
 	}
 	
-	rc = set_bias_mode(HMC5883L_BIAS_MODE_NORMAL);
+	rc = set_config_a(HMC5883L_AVERAGING_1, HMC5883L_DATARATE_15Hz, HMC5883L_BIAS_MODE_NORMAL);
 	if (rc != HMC5883L_OK) {
 		return rc;
 	}
@@ -136,55 +131,49 @@ int Hmc5883l::self_test()
 	return HMC5883L_OK;
 }
 
-#define HMC5883L_SET_FIELD(field, rtype, raddr) {\
-	rtype reg = { 0 };\
-	if (!_read_reg(raddr, &reg.byte)) {\
-		EHAS_UP(HMC5883L_ERROR_I2cError);\
-		return -HMC5883L_ERROR_I2cError;\
-	}\
-	reg.bf.field = value;\
-	if (!_write_reg(raddr, reg.byte)) {\
-		EHAS_UP(HMC5883L_ERROR_I2cError);\
-		return -HMC5883L_ERROR_I2cError;\
-	}\
-	uint8_t check = 0;\
-	if (!_read_reg(raddr, &check)) {\
-		EHAS_UP(HMC5883L_ERROR_I2cError);\
-		return -HMC5883L_ERROR_I2cError;\
-	}\
-	if (check != reg.byte) {\
-		EHAS_UP(HMC5883L_ERROR_RegVerif);\
-		return -HMC5883L_ERROR_RegVerif;\
-	}\
+int Hmc5883l::set_config_a(hmc5883l_averaging_t averaging, hmc5883l_datarate_t datarate, hmc5883l_bias_mode_t bias) {
+	hmc5883l_reg_a_t reg = { 0 };
+	reg.bf.MA = averaging;
+	reg.bf.DO = datarate;
+	reg.bf.MS = bias;
+
+	return _write_and_check_reg(HMC5883L_CONFIG_REG_A_ADDR, reg.byte);
 }
 
-int Hmc5883l::set_averaging(hmc5883l_averaging_t value) {
-	HMC5883L_SET_FIELD(MA, hmc5883l_reg_a_t, HMC5883L_CONFIG_REG_A_ADDR);
-	return HMC5883L_OK;
+int Hmc5883l::set_gain(hmc5883l_gain_t gain) {
+	hmc5883l_reg_b_t reg = { 0 };
+	reg.bf.GN = gain;
+
+	return _write_and_check_reg(HMC5883L_CONFIG_REG_B_ADDR, reg.byte);
 }
 
-int Hmc5883l::set_datarate(hmc5883l_datarate_t value) {
-	HMC5883L_SET_FIELD(DO, hmc5883l_reg_a_t, HMC5883L_CONFIG_REG_A_ADDR);
-	return HMC5883L_OK;
+int Hmc5883l::enter_coninuous_mode()
+{
+	hmc5883l_reg_mode_t reg = { 0 };
+	reg.bf.MD = HMC5883L_MODE_CONTINUOUS;
+
+	return _write_and_check_reg(HMC5883L_MODE_REG_ADDR, reg.byte);
 }
 
-int Hmc5883l::set_bias_mode(hmc5883l_bias_mode_t value) {
-	HMC5883L_SET_FIELD(MS, hmc5883l_reg_a_t, HMC5883L_CONFIG_REG_A_ADDR);
-	return HMC5883L_OK;
+int Hmc5883l::enter_idle_mode()
+{
+	hmc5883l_reg_mode_t reg = { 0 };
+	reg.bf.MD = HMC5883L_MODE_IDLE0;
+
+	return _write_and_check_reg(HMC5883L_MODE_REG_ADDR, reg.byte);
 }
 
-int Hmc5883l::set_gain(hmc5883l_gain_t value) {
-	HMC5883L_SET_FIELD(GN, hmc5883l_reg_b_t, HMC5883L_CONFIG_REG_B_ADDR);
-	return HMC5883L_OK;
-}
+int Hmc5883l::start_measure()
+{
+	hmc5883l_reg_mode_t reg = { 0 };
 
-int Hmc5883l::set_HS_mode(bool value) {
-	HMC5883L_SET_FIELD(HS, hmc5883l_reg_mode_t, HMC5883L_MODE_REG_ADDR);
-	return HMC5883L_OK;
-}
+	reg.bf.MD = HMC5883L_MODE_SINGLE_MEASURE;
 
-int Hmc5883l::set_mode(hmc5883l_mode_t value) {
-	HMC5883L_SET_FIELD(MD, hmc5883l_reg_mode_t, HMC5883L_MODE_REG_ADDR);
+	if (!_write_reg(HMC5883L_MODE_REG_ADDR, reg.byte)) {
+		EHAS_UP(HMC5883L_ERROR_I2cError);
+		return -HMC5883L_ERROR_I2cError;
+	}
+
 	return HMC5883L_OK;
 }
 
@@ -267,6 +256,28 @@ bool Hmc5883l::_read_reg_array(uint8_t addr, uint8_t* buffer, uint8_t lenght)
 	}
 
 	return true;
+}
+
+int Hmc5883l::_write_and_check_reg(uint8_t addr, uint8_t value)
+{
+	if (!_write_reg(addr, value)) {
+		EHAS_UP(HMC5883L_ERROR_I2cError);
+		return -HMC5883L_ERROR_I2cError;
+	}
+
+	uint8_t check = 0;
+
+	if (!_read_reg(addr, &check)) {
+		EHAS_UP(HMC5883L_ERROR_I2cError);
+		return -HMC5883L_ERROR_I2cError;
+	}
+
+	if (check != value) {
+		EHAS_UP(HMC5883L_ERROR_RegVerif);
+		return -HMC5883L_ERROR_RegVerif;
+	}
+
+	return HMC5883L_OK;
 }
 
 

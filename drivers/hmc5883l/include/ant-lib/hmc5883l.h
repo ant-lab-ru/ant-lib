@@ -39,15 +39,16 @@ public:
 
 	int get_xyz_raw(int16_t* x, int16_t* y, int16_t* z);
 
-	int set_averaging(hmc5883l_averaging_t averaging);
-	int set_datarate(hmc5883l_datarate_t value);
-	int set_bias_mode(hmc5883l_bias_mode_t value);
-	int set_gain(hmc5883l_gain_t value);
+	int set_config_a(hmc5883l_averaging_t averaging, hmc5883l_datarate_t datarate, hmc5883l_bias_mode_t bias);
+	int set_gain(hmc5883l_gain_t gain);
 	int set_HS_mode(bool value);
-	int set_mode(hmc5883l_mode_t value);
+
+	int enter_coninuous_mode();
+	int enter_idle_mode();
+	int start_measure();
 
 	int get_status(hmc5883l_reg_status_bf_t* value);
-	
+
 	uint8_t self_test_averaging = 10;
 	
 	// ref - reference magnetic field values for calibration. User shall store this values. Used for get_single_xyz_calibrated
@@ -69,5 +70,7 @@ private:
 	bool _write_reg(uint8_t addr, uint8_t value);
 	bool _read_reg_array(uint8_t addr, uint8_t* buffer, uint8_t lenght);
 	bool _write_reg_array(uint8_t addr, uint8_t* values, uint8_t size);
+	
+	int _write_and_check_reg(uint8_t addr, uint8_t value);
 };
 
