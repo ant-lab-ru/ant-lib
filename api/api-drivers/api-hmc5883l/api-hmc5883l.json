@@ -1,0 +1,22 @@
+{
+  "name" : "hmc5883l",
+  "interfaces": [
+    {
+      "name" : "hmc_config",
+      "fields": [
+        "hmc5883l_data_t reference",
+        "hmc5883l_data_t last_test"
+      ],
+      "commands": [
+        "int32_t self_test()"
+      ]
+    },
+    {
+      "name" : "hmc",
+      "commands": [
+        "hmc5883l_data_t get_xyz()",
+        "hmc5883l_data_t get_xyz_calibrated()"
+      ]
+    }
+  ]
+}
