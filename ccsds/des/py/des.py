@@ -9,87 +9,133 @@ requestTypeServicesList = 0x02
 class DesClient:
     def __init__(self, desFilePath : str):
         self.file = desFilePath
+        self.des = self.__getDes()
+
+    def __getDes(self):
+        with open(self.file, "a+") as f:
+            f.seek(0)
+            desJson = f.read()
+
+        try:
+            desDict = json.loads(desJson)
+        except Exception as msg:
+            print(msg)
+            return []
+
+        if not "devices" in desDict:
+            return []
+        else:
+            return desDict["devices"]
+        
+    def __setDes(self, des):
+        self.des = des
+        desDict = {}
+        desDict["devices"] = des
+        desJson = json.dumps(desDict, indent=2)
+        with open(self.file, "w") as f:
+            f.write(desJson)
+        return 
+
+    def getDeviceAddress(self, device : str):
+        for d in self.des:
+            if (d["device"] == device):
+                return d["addr"]
+        return ''
+    
+    def getDeviceList(self):
+        device_list = []
+        for d in self.des:
+            device_list.append(d["device"])
+        return device_list
+    
+    def getServicePort(self, device : str, service: str):
+        for d in self.des:
+            if (d["device"] == device):
+                services = d["services"]
+                for s in services:
+                    if s["name"] == service:
+                        return s["port"]
+        return ''
+    
+    def clearDevice(self, device : str):
+        des = self.des
+        for d in des:
+            if (d["device"] == device):
+                d["services"] = []
+        self.__setDes(des)
+        return self.des 
+
+    def getDescription(self):
+        return self.des
+    
+    def clearDescription(self):
+        self.__setDes([])
+        return self.des
+
+    def syncDes(self):
+        self.des = self.__getDes()
+        return self.des
+
+    def devicesByService(self, service_name : str):
+        device_list = []
+        for d in self.des:
+            for s in d["services"]:
+                if s["name"] == service_name:
+                    device_list.append(d["device"])
+                    break
+        return device_list
 
     def generateBroadcastRequest(self):
-        req = bytearray(requestLen)
-        req[0] = 'D'
-        req[1] = 'E'
-        req[2] = 'S'
-        req[3] = requestTypeBroadcast
-        return req
+        return 'DES'.encode('ascii') + requestTypeBroadcast.to_bytes(1, 'little')
     
     def generateServicesListRequest(self):
-        req = bytearray(requestLen)
-        req[0] = 'D'
-        req[1] = 'E'
-        req[2] = 'S'
-        req[3] = requestTypeServicesList
-        return req
-    
-    def parseServicesListResponse(self, device : str, data : bytes):
+        return 'DES'.encode('ascii') + requestTypeServicesList.to_bytes(1, 'little')
+
+    def parseServicesListResponse(self, device : str, data : bytes, port: str):
         if len(data) < requestTypeSize:
             raise ValueError(f'Response len: {len(data)} less than {requestTypeSize} byte')
         
         if (data[0] != requestTypeServicesList):
             raise ValueError(f'First byte invalid. Received: {data[0]}, but expected: {requestTypeServicesList}')
         
-        data = data[1:]
+        offset = requestTypeSize;
         idx = 0
 
         servicesList = []
 
-        while(len(data) > 0):
-            if data[0] != idx:
-                raise ValueError(f'Service idx invalid. Received: {data[0]}, but expected: {idx}')
-            data=data[1:]
+        while(offset < len(data)):
+            if data[offset] != idx:
+                raise ValueError(f'Service idx invalid. Received: {data[offset]}, but expected: {idx}')
+            offset+=1
             idx+=1
-            name = (data.split(bytes([0]))[0]).decode('ascii')
-            data = data[len(name) + 1:]
-            version = (data.split(bytes([0]))[0]).decode('ascii')
-            data = data[len(version) + 1:]
-            servicesList.append({"name" : name, "version" : version})
+            name = (data[offset:].split(b'\x00')[0]).decode('ascii')
+            offset += len(name) + 1
+            version = (data[offset:].split(b'\x00')[0]).decode('ascii')
+            offset += len(version) + 1
+            servicesList.append({"name" : name, "version" : version, "port" : port})
 
-        with open(self.file, "r") as f:
-            desJson = f.read()
-
-        desDict = json.loads(desJson)
-        des = desDict["devices"]
+        des = self.__getDes()
         for d in des:
             if d["device"] == device:
                 d["services"] = servicesList
                 break
 
-        desDict["devices"] = des
-
-        desJson = json.dumps(desDict, indent=2)
-
-        with open(self.file, "w") as f:
-            f.write(desJson)
-
+        self.__setDes(des)
         return des
 
 
     def parseBroadcastResponse(self, data : bytes, addr : str):
         if len(data) < 3:
             raise ValueError(f'Response len: {len(data)} less than 3 bytes')
-        
+
         if (data[0] != requestTypeBroadcast):
             raise ValueError(f'First byte invalid. Received: {data[0]}, but expected: {requestTypeBroadcast}')
-        
+
         if (data[-1] != 0):
             raise ValueError(f'First byte invalid. Received: {data[-1]}, but expected: {0}')
         
-        with open(self.file, "w+") as f:
-            desJson = f.read()
+        des = self.__getDes()
 
-        if desJson == '': desJson = "{}"
-
-        desDict = json.loads(desJson)
-        if "devices" not in desDict:
-            desDict = {"devices" : []}
-
-        des = desDict["devices"]
-        
         device = data[1:-1].decode('ascii') # name = "myDevice"
 
         for x in des:
@@ -97,16 +143,12 @@ class DesClient:
                 raise ValueError(f'No key "device"')
     
             if x["device"] == device:
-                continue
-
-        newDevice = {"device" : device, "addr" : addr, "services" : []}
-        des.append(newDevice)
-        desDict["devices"] = des
-
-        desJson = json.dumps(desDict, indent=2)
-
-        with open(self.file, "w") as f:
-            f.write(desJson)
+                x["addr"] = addr
+                break
+        else:
+            des.append({"device" : device, "addr" : addr, "services" : []})
+        
+        self.__setDes(des)
 
         return device
 
