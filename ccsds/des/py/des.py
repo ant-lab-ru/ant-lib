@@ -9,6 +9,7 @@ requestTypeServicesList = 0x02
 class DesClient:
     def __init__(self, desFilePath : str):
         self.file = desFilePath
+        self.addresses = []
         self.des = self.__getDes()
 
     def __getDes(self):
@@ -64,6 +65,14 @@ class DesClient:
                 d["services"] = []
         self.__setDes(des)
         return self.des 
+    
+    def setDeviceAddr(self, device_name : str, addr : str):
+        des = self.des
+        for d in des:
+            if (d["device"] == device_name):
+                d["addr"] = addr
+        self.__setDes(des)
+        return self.des
 
     def getDescription(self):
         return self.des
